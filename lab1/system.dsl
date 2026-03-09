@@ -47,6 +47,7 @@ workspace "Lab1" {
         MedicineSystem.api -> MedicineSystem.db "Чтение/запись данных (SQL)(PG Protocol)"
         MedicineSystem.api -> MedicineSystem.files "Загрузка/получение файлов (REST/HTTPS)"
         MedicineSystem.api -> MedicineSystem.cache "Кэширование запросов (RESP)"
+        MedicineSystem.api -> MedicineSystem.worker "Передача операций на выполнение для интеграций"
         MedicineSystem.worker -> EmailService "Отправляет email (API)(REST/HTTPS)"
         MedicineSystem.worker -> SMSService "Отправляет SMS (API)(REST/HTTPS)"
         MedicineSystem.api -> PaymentSystem "Синхронный вызов оплаты (REST) или редирект на стороннюю страницу (REST/HTTPS)"
@@ -59,12 +60,32 @@ workspace "Lab1" {
             include *
             autoLayout
         }
+
+
         container MedicineSystem "Containers" "Контейнеры медицинской системы" {
             include *
             autoLayout
         }
+
+        dynamic MedicineSystem "CreateMedicalRecordSequence" "Диаграмма последовательности: врач создаёт запись, пациент получает уведомление" {
+            doctor -> MedicineSystem.webApp "Открывает интерфейс врача и выбирает пациента"
+            MedicineSystem.webApp -> MedicineSystem.api "POST /api/records {patientId, diagnosis, notes, attachments}"
+            MedicineSystem.api -> MedicineSystem.auth "Validate JWT and check role 'doctor'"
+            MedicineSystem.auth -> MedicineSystem.api "200 OK (token valid)"
+            MedicineSystem.api -> MedicineSystem.db "INSERT INTO records (patient_id, data...)"
+            MedicineSystem.db -> MedicineSystem.api "recordId"
+            MedicineSystem.api -> MedicineSystem.files "Загрузить вложения (при наличии) -> получить url(ы)"
+            MedicineSystem.api -> MedicineSystem.webApp "201 Created (recordId)"
+            MedicineSystem.api -> MedicineSystem.worker "Nees to Send email to patient (record created)"
+            MedicineSystem.worker -> EmailService "Send email to patient (record created)"
+            MedicineSystem.api -> MedicineSystem.worker "Nees to Send SMS to patient (optional))"
+            MedicineSystem.worker -> SMSService "Send SMS to patient (optional)"
+            MedicineSystem.api -> MedicineSystem.db "Update notifications table/status"
+            autoLayout
+        }
+
         styles {
-        element "Element" {
+            element "Element" {
                 color #0773af
                 stroke #0773af
                 strokeWidth 7
@@ -79,7 +100,7 @@ workspace "Lab1" {
             relationship "Relationship" {
                 thickness 4
             }
-    }
+        }
     }
 
     

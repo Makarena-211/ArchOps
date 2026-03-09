@@ -96,3 +96,6 @@ files = Хранилище для файлов Amazon S3
 cache = Кэш для авторизации и частых запросов Redis 7.4
 adminApp = Приложение для админа Fastapi/Userver
 worker = Сущность для бэкграунд отправки запросов в интеграции Fastapi/Userver
+
+7) Dynamic
+![dynamic](image-3.png)
