@@ -44,13 +44,13 @@ workspace "Lab1" {
         doctor -> MedicineSystem.webApp "Использует (рабочий интерфейс)"
         MedicineSystem.webApp -> MedicineSystem.api "REST/HTTPS"
         MedicineSystem.api -> MedicineSystem.auth "Проверка токенов / логин"
-        MedicineSystem.api -> MedicineSystem.db "Чтение/запись данных (SQL)"
-        MedicineSystem.api -> MedicineSystem.files "Загрузка/получение файлов"
-        MedicineSystem.api -> MedicineSystem.cache "Кэширование запросов"
-        MedicineSystem.worker -> EmailService "Отправляет email (API)"
-        MedicineSystem.worker -> SMSService "Отправляет SMS (API)"
-        MedicineSystem.api -> PaymentSystem "Синхронный вызов оплаты (REST) или редирект на стороннюю страницу"
-        MedicineSystem.adminApp -> MedicineSystem.api "REST (управление)"
+        MedicineSystem.api -> MedicineSystem.db "Чтение/запись данных (SQL)(PG Protocol)"
+        MedicineSystem.api -> MedicineSystem.files "Загрузка/получение файлов (REST/HTTPS)"
+        MedicineSystem.api -> MedicineSystem.cache "Кэширование запросов (RESP)"
+        MedicineSystem.worker -> EmailService "Отправляет email (API)(REST/HTTPS)"
+        MedicineSystem.worker -> SMSService "Отправляет SMS (API)(REST/HTTPS)"
+        MedicineSystem.api -> PaymentSystem "Синхронный вызов оплаты (REST) или редирект на стороннюю страницу (REST/HTTPS)"
+        MedicineSystem.adminApp -> MedicineSystem.api "(управление)(REST/HTTPS)"
     }
 
 

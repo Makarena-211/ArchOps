@@ -86,3 +86,13 @@
 
 5) С2
 ![c2](image-2.png)
+
+6) Контейнеры
+webApp - Для врачей и пациентов (frontend)
+api - Бизнес логика (Backend) FastApi или Yandex Userver
+auth = Сервис Аутентификации или функционал аутентификации OAuth2/JWT
+db = База Данных PostgreSQL 18
+files = Хранилище для файлов Amazon S3
+cache = Кэш для авторизации и частых запросов Redis 7.4
+adminApp = Приложение для админа Fastapi/Userver
+worker = Сущность для бэкграунд отправки запросов в интеграции Fastapi/Userver
