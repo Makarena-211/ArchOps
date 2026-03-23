@@ -1,0 +1,34 @@
+components_manager:
+  task_processors:
+    main-task-processor:
+      worker_threads: 4
+  coro_pool:
+    stack_usage_monitor_enabled: false
+
+  components:
+    server:
+      listener:
+        port: 8080
+        task_processor: main-task-processor
+
+    logging:
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: info
+
+    # PostgreSQL component name = postgres-db (как в коде)
+    postgres-db:
+      dbconnection: "postgresql://medicine:secret@postgres:5432/medicine"
+      blocking_task_processor: main-task-processor
+      dns_resolver: async
+
+    handler-health:
+      path: /health
+      method: GET
+      task_processor: main-task-processor
+
+    handler-records-create:
+      path: /api/records
+      method: POST
+      task_processor: main-task-processor
