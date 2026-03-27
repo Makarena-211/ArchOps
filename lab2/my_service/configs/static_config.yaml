@@ -1,70 +1,103 @@
 components_manager:
-    task_processors:                  # Task processor is an executor for coroutine tasks
+  task_processors:
+    main-task-processor:
+      worker_threads: $worker-threads
 
-        main-task-processor:          # Make a task processor for CPU-bound coroutine tasks.
-            worker_threads: $worker-threads         # Process tasks in 4 threads.
+    fs-task-processor:
+      worker_threads: $worker-fs-threads
 
-        fs-task-processor:            # Make a separate task processor for filesystem bound tasks.
-            worker_threads: $worker-fs-threads
-    coro_pool:
-        stack_usage_monitor_enabled: false
+  coro_pool:
+    stack_usage_monitor_enabled: false
 
-    default_task_processor: main-task-processor
-    components:                       # Configuring components that were registered via component_list
-        server:
-            listener:                 # configuring the main listening socket...
-                port: $server-port            # ...to listen on this port and...
-                task_processor: main-task-processor    # ...process incoming requests on this task processor.
-        postgres-db:
-            dbconnection: "postgresql://medicine:secret@postgres:5432/medicine"
-            blocking_task_processor: fs-task-processor
-            dns_resolver: async
-        logging:
-            fs-task-processor: fs-task-processor
-            loggers:
-                default:
-                    file_path: '@stderr'
-                    level: $logger-level
-                    overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
+  default_task_processor: main-task-processor
+  components:
+    server:
+      listener:
+        port: $server-port
+        task_processor: main-task-processor
 
-        # Dynamic config options. Cache is disabled, updates are disabled.
-        dynamic-config:
-            # For most of userver dynamic configs, defaults are used, some are overridden here.
-            # See userver "dynamic config" docs for what configs exist.
-            defaults:
-                HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
+    postgres-db:
+      dbconnection: "postgresql://medicine:secret@postgres:5432/medicine"
+      blocking_task_processor: fs-task-processor
+      dns_resolver: async
 
-        testsuite-support: {}
+    logging:
+      fs-task-processor: fs-task-processor
+      loggers:
+        default:
+          file_path: '@stderr'
+          level: $logger-level
+          overflow_behavior: discard
 
-        congestion-control:
+    dynamic-config:
+      defaults:
+        HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
 
-        http-client:
-        http-client-core:
-            load-enabled: $is_testing
-            fs-task-processor: fs-task-processor
+    testsuite-support: {}
 
-        dns-client:
-            fs-task-processor: fs-task-processor
+    congestion-control:
 
-        tests-control:
-            load-enabled: $is-testing
-            path: /tests/{action}
-            method: POST
-            task_processor: main-task-processor
+    http-client:
+    http-client-core:
+      load-enabled: $is_testing
+      fs-task-processor: fs-task-processor
 
-        handler-ping:
-            path: /ping
-            method: GET
-            task_processor: main-task-processor
-            throttling_enabled: false
-            url_trailing_slash: strict-match
+    dns-client:
+      fs-task-processor: fs-task-processor
 
-        handler-health:
-            path: /health
-            method: GET
-            task_processor: main-task-processor
+    tests-control:
+      load-enabled: $is_testing
+      path: /tests/{action}
+      method: POST
+      task_processor: main-task-processor
 
-        handler-records-create:
-            path: /api/records
-            method: POST
-            task_processor: main-task-processor
+    handler-ping:
+      path: /ping
+      method: GET
+      task_processor: main-task-processor
+      throttling_enabled: false
+      url_trailing_slash: strict-match
+
+    handler-health:
+      path: /health
+      method: GET
+      task_processor: main-task-processor
+
+    handler-records-create:
+      path: /api/records
+      method: POST
+      task_processor: main-task-processor
+
+    handler-records-put:
+      path: /api/records/{recordId}
+      method: PUT
+      task_processor: main-task-processor
+
+    handler-records-patch:
+      path: /api/records/{recordId}
+      method: PATCH
+      task_processor: main-task-processor
+
+    handler-records-delete:
+      path: /api/records/{recordId}
+      method: DELETE
+      task_processor: main-task-processor
+
+    handler-records-list:
+      path: /api/records
+      method: GET
+      task_processor: main-task-processor
+
+    auth-config:
+      jwt-secret: "CHANGE_ME_SUPER_SECRET"
+      token-ttl-seconds: 3600
+
+    handler-auth-register:
+      path: /api/auth/register
+      method: POST
+      task_processor: main-task-processor
+
+    handler-auth-login:
+      path: /api/auth/login
+      method: POST
+      task_processor: main-task-processor

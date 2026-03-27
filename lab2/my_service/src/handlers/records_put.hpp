@@ -2,17 +2,15 @@
 
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
-#include "../components/auth_config.hpp"
 
 namespace myservice::handlers {
 
-class RecordsCreate final : public userver::server::handlers::HttpHandlerJsonBase {
+class RecordsPut final : public userver::server::handlers::HttpHandlerJsonBase {
  public:
-  static constexpr std::string_view kName = "handler-records-create";
+  static constexpr std::string_view kName = "handler-records-put";
 
-  RecordsCreate(const userver::components::ComponentConfig& config,
-                const userver::components::ComponentContext& context);
-
+  RecordsPut(const userver::components::ComponentConfig& config,
+             const userver::components::ComponentContext& context);
 
   userver::formats::json::Value HandleRequestJsonThrow(
       const userver::server::http::HttpRequest& request,
@@ -21,7 +19,6 @@ class RecordsCreate final : public userver::server::handlers::HttpHandlerJsonBas
 
  private:
   userver::storages::postgres::ClusterPtr pg_;
-  const myservice::components::AuthConfig& auth_cfg_;
 };
 
 }  // namespace myservice::handlers

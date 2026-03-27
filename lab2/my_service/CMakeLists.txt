@@ -18,12 +18,27 @@ endif()
 
 userver_setup_environment()
 
+find_package(OpenSSL REQUIRED)
+
 # --- Common sources ---
 add_library(
   ${PROJECT_NAME}_objs OBJECT
+
   src/components/component_list.cpp
+  src/components/auth_config.cpp
+
+  src/auth/jwt.cpp
+  src/auth/password.cpp
+
   src/handlers/health.cpp
+  src/handlers/auth_register.cpp
+  src/handlers/auth_login.cpp
+
   src/handlers/records_create.cpp
+  src/handlers/records_put.cpp
+  src/handlers/records_patch.cpp
+  src/handlers/records_delete.cpp
+  src/handlers/records_list.cpp
 )
 
 target_include_directories(
@@ -37,6 +52,8 @@ target_link_libraries(
   PUBLIC
     userver::core
     userver::postgresql
+  PRIVATE
+    OpenSSL::Crypto
 )
 
 # --- The Service ---

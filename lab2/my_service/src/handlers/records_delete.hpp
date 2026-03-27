@@ -2,17 +2,17 @@
 
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
+
 #include "../components/auth_config.hpp"
 
 namespace myservice::handlers {
 
-class RecordsCreate final : public userver::server::handlers::HttpHandlerJsonBase {
+class RecordsDelete final : public userver::server::handlers::HttpHandlerJsonBase {
  public:
-  static constexpr std::string_view kName = "handler-records-create";
+  static constexpr std::string_view kName = "handler-records-delete";
 
-  RecordsCreate(const userver::components::ComponentConfig& config,
+  RecordsDelete(const userver::components::ComponentConfig& config,
                 const userver::components::ComponentContext& context);
-
 
   userver::formats::json::Value HandleRequestJsonThrow(
       const userver::server::http::HttpRequest& request,
