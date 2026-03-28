@@ -22,14 +22,12 @@ std::int64_t NowUnix() {
 }
 
 std::string Base64UrlEncode(const unsigned char* data, std::size_t len) {
-  // base64
   const std::size_t out_len = 4 * ((len + 2) / 3);
   std::string out(out_len, '\0');
   const int real = EVP_EncodeBlock(reinterpret_cast<unsigned char*>(out.data()), data,
                                   static_cast<int>(len));
   out.resize(real);
 
-  // to base64url: '+'->'-', '/'->'_', remove '='
   for (auto& c : out) {
     if (c == '+') c = '-';
     else if (c == '/') c = '_';
@@ -43,7 +41,6 @@ std::string Base64UrlEncode(std::string_view s) {
 }
 
 std::string Base64UrlDecode(std::string_view in) {
-  // base64url -> base64
   std::string b64(in);
   for (auto& c : b64) {
     if (c == '-') c = '+';
@@ -59,8 +56,6 @@ std::string Base64UrlDecode(std::string_view in) {
 
   out.resize(real);
 
-  // EVP_DecodeBlock может добавить \0 из-за padding — аккуратно подрежем по '='
-  // Более строгий декод тут не нужен: дальше всё равно JSON парсим.
   while (!out.empty() && out.back() == '\0') out.pop_back();
   return out;
 }
@@ -89,12 +84,10 @@ bool ConstantTimeEqual(std::string_view a, std::string_view b) {
 }  // namespace
 
 std::string CreateTokenHS256(const JwtClaims& claims, std::string_view secret) {
-  // header
   userver::formats::json::ValueBuilder header;
   header["alg"] = "HS256";
   header["typ"] = "JWT";
 
-  // payload
   userver::formats::json::ValueBuilder payload;
   payload["sub"] = claims.user_id;
   payload["email"] = claims.email;
@@ -114,7 +107,6 @@ std::string CreateTokenHS256(const JwtClaims& claims, std::string_view secret) {
 }
 
 bool VerifyTokenHS256(std::string_view token, std::string_view secret, JwtClaims& out) {
-  // split by '.'
   const auto p1 = token.find('.');
   if (p1 == std::string_view::npos) return false;
   const auto p2 = token.find('.', p1 + 1);
@@ -124,13 +116,11 @@ bool VerifyTokenHS256(std::string_view token, std::string_view secret, JwtClaims
   const auto payload_b64 = token.substr(p1 + 1, p2 - (p1 + 1));
   const auto sig_b64 = token.substr(p2 + 1);
 
-  // verify signature
   const std::string signing_input = std::string(header_b64) + "." + std::string(payload_b64);
   const auto expected_sig = HmacSha256Base64Url(signing_input, secret);
 
   if (!ConstantTimeEqual(expected_sig, sig_b64)) return false;
 
-  // parse payload
   const auto payload_json = Base64UrlDecode(payload_b64);
   if (payload_json.empty()) return false;
 

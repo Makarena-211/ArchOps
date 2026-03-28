@@ -13,13 +13,14 @@ namespace myservice::handlers {
 
 namespace {
 
-std::int64_t ParseIdPathArgOrThrow(const userver::server::http::HttpRequest& request,
-                                  const char* name) {
+std::int64_t ParseIdPathArgOrThrow(
+    const userver::server::http::HttpRequest& request, const char* name) {
   try {
     return std::stoll(request.GetPathArg(name));
   } catch (...) {
     throw userver::server::handlers::ClientError(
-        userver::server::handlers::ExternalBody{"Invalid path parameter: recordId"});
+        userver::server::handlers::ExternalBody{
+            "Invalid path parameter: recordId"});
   }
 }
 
@@ -28,7 +29,8 @@ std::int64_t ParseIdPathArgOrThrow(const userver::server::http::HttpRequest& req
 RecordsPut::RecordsPut(const userver::components::ComponentConfig& config,
                        const userver::components::ComponentContext& context)
     : HttpHandlerJsonBase(config, context) {
-  pg_ = context.FindComponent<userver::components::Postgres>("postgres-db").GetCluster();
+  pg_ = context.FindComponent<userver::components::Postgres>("postgres-db")
+            .GetCluster();
 }
 
 userver::formats::json::Value RecordsPut::HandleRequestJsonThrow(
@@ -38,7 +40,8 @@ userver::formats::json::Value RecordsPut::HandleRequestJsonThrow(
   const auto record_id = ParseIdPathArgOrThrow(request, "recordId");
 
   // PUT = полная замена, поля обязательны
-  if (!request_json.HasMember("diagnosis") || !request_json.HasMember("notes")) {
+  if (!request_json.HasMember("diagnosis") ||
+      !request_json.HasMember("notes")) {
     throw userver::server::handlers::ClientError(
         userver::server::handlers::ExternalBody{
             "Missing required fields for PUT: diagnosis, notes"});
@@ -52,9 +55,9 @@ userver::formats::json::Value RecordsPut::HandleRequestJsonThrow(
         userver::server::handlers::ExternalBody{"diagnosis must not be empty"});
   }
 
-  const auto res = pg_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
-                                myservice::db::kUpdateRecordPut,
-                                record_id, diagnosis, notes);
+  const auto res = pg_->Execute(
+      userver::storages::postgres::ClusterHostType::kMaster,
+      myservice::db::kUpdateRecordPut, record_id, diagnosis, notes);
 
   if (res.IsEmpty()) {
     throw userver::server::handlers::ResourceNotFound(

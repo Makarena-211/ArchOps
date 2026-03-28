@@ -10,7 +10,6 @@ std::string HashPassword(std::string_view password, std::string_view salt) {
   data.append(salt);
   data.append(password);
 
-  // hex string
   return userver::crypto::hash::Sha256(data);
 }
 

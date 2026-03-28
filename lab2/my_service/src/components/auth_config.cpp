@@ -12,8 +12,8 @@ AuthConfig::AuthConfig(const userver::components::ComponentConfig& config,
 }
 
 userver::yaml_config::Schema AuthConfig::GetStaticConfigSchema() {
-  // Важно: схема должна описывать поля, которые читает constructor
-  return userver::yaml_config::MergeSchemas<userver::components::ComponentBase>(R"(
+  return userver::yaml_config::MergeSchemas<userver::components::ComponentBase>(
+      R"(
 type: object
 description: Auth/JWT settings
 additionalProperties: false

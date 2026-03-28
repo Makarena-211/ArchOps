@@ -8,8 +8,6 @@
 
 namespace myservice::auth {
 
-// ВАЖНО: возвращаем std::string, потому что HttpRequest::GetHeader возвращает std::string,
-// а возвращать string_view на временный std::string нельзя (use-after-free).
 inline std::string ExtractBearerTokenOrThrow(const userver::server::http::HttpRequest& request) {
   const std::string auth = request.GetHeader("Authorization");
 
@@ -20,7 +18,6 @@ inline std::string ExtractBearerTokenOrThrow(const userver::server::http::HttpRe
         userver::server::handlers::ExternalBody{"Missing/invalid Authorization: Bearer token"});
   }
 
-  // Возвращаем копию токена, чтобы время жизни было корректным
   return auth.substr(kPrefix.size());
 }
 

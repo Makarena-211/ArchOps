@@ -269,7 +269,6 @@ def run_all() -> None:
     print(pretty(users_before))
 
     # 4) сменить роль в БД (например, чтобы тестить защищенные эндпоинты)
-    #    create_record у вас разрешен только doctor/admin — поэтому поднимем роль на doctor
     uid, new_role = db_set_role(db_cfg, email=email, role="doctor")
     print(f"\nDB: updated role for email={email} -> user_id={uid}, role={new_role}")
 
@@ -277,7 +276,7 @@ def run_all() -> None:
     print("\nUsers in DB (after role change):")
     print(pretty(users_after))
 
-    # 5) логин (ВАЖНО: после смены роли логинимся заново, чтобы JWT содержал новую роль)
+    # 5) логин 
     login_resp = client.login(email=email, password=password)
     show("POST /api/auth/login", login_resp)
 
@@ -290,7 +289,7 @@ def run_all() -> None:
     create_resp = client.create_record(
         token=token,
         patient_id=1,
-        doctor_id=uid,  # просто пример: ставим doctorId = id текущего "врача"
+        doctor_id=uid,  # ставим doctorId = id текущего "врача"
         diagnosis="Flu",
         notes="Rest, drink water",
     )
@@ -299,7 +298,6 @@ def run_all() -> None:
     list_resp = client.list_records(limit=10, offset=0)
     show("GET /api/records (list)", list_resp)
 
-    # Возьмем id первой записи из списка
     record_id: Optional[int] = None
     if list_resp.body and isinstance(list_resp.body, dict):
         items = list_resp.body.get("items")
@@ -329,5 +327,4 @@ def run_all() -> None:
 
 
 if __name__ == "__main__":
-    # pip install requests psycopg2-binary
     run_all()
