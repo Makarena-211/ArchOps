@@ -1,0 +1,2 @@
+pycodestyle
+psycopg2-binary

@@ -1,0 +1,48 @@
+{
+  "name": "my_service",
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
+  "service": "my_service",
+  "workspaceFolder": "/home/user/my_service",
+  "shutdownAction": "stopCompose",
+
+  "remoteUser": "user",
+
+  "containerEnv": {
+    "CCACHE_DIR": "/home/user/my_service/.ccache",
+    "CORES_DIR": "/cores",
+    "PREFIX": "${PREFIX:-~/.local}",
+    "SHELL": "/bin/bash"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.makefile-tools",
+        "vadimcn.vscode-lldb",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "clangd.arguments": [
+          "--background-index",
+          "--compile-commands-dir=.vscode",
+          "--clang-tidy",
+          "--completion-style=detailed",
+          "--header-insertion=never"
+        ],
+        "clangd.path": "/usr/bin/clangd",
+        "cmake.automaticReconfigure": false,
+        "cmake.configureOnEdit": false,
+        "cmake.configureOnOpen": false,
+        "cmake.copyCompileCommands": "${workspaceFolder}/.vscode/compile_commands.json"
+      }
+    }
+  },
+
+  "forwardPorts": [8080],
+
+  "onCreateCommand": "sudo git config --global --add safe.directory /home/user/my_service"
+}

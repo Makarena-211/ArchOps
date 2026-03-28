@@ -1,0 +1,480 @@
+openapi: 3.0.3
+info:
+  title: my_service API
+  version: 1.0.0
+  description: |
+    API для сервиса мед. записей на userver.
+    Авторизация: Bearer JWT (HS256).
+servers:
+  - url: http://localhost:8080
+    description: Local
+
+tags:
+  - name: system
+    description: System endpoints
+  - name: auth
+    description: Authentication endpoints
+  - name: records
+    description: Medical records endpoints
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      additionalProperties: true
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: "1234"
+
+    RegisterResponse:
+      type: object
+      required: [userId, email, role]
+      properties:
+        userId:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          example: user@example.com
+        role:
+          type: string
+          example: patient
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          example: user@example.com
+        password:
+          type: string
+          example: "1234"
+
+    LoginResponse:
+      type: object
+      required: [accessToken, tokenType, expiresIn]
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          example: 3600
+
+    CreateRecordRequest:
+      type: object
+      required: [patientId, doctorId, diagnosis, notes]
+      properties:
+        patientId:
+          type: integer
+          format: int64
+          example: 1
+        doctorId:
+          type: integer
+          format: int64
+          example: 10
+        diagnosis:
+          type: string
+          example: Flu
+        notes:
+          type: string
+          example: Rest, drink water
+
+    CreateRecordResponse:
+      type: object
+      required: [recordId]
+      properties:
+        recordId:
+          type: integer
+          format: int64
+          example: 123
+
+    RecordItem:
+      type: object
+      required: [id, patientId, doctorId, diagnosis, notes, createdAt]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 123
+        patientId:
+          type: integer
+          format: int64
+          example: 1
+        doctorId:
+          type: integer
+          format: int64
+          example: 10
+        diagnosis:
+          type: string
+          example: Flu
+        notes:
+          type: string
+          example: Rest
+        createdAt:
+          type: string
+          description: UTC time formatted as YYYY-MM-DDTHH:MM:SSZ
+          example: "2026-03-27T12:34:56Z"
+
+    ListRecordsResponse:
+      type: object
+      required: [items, limit, offset, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordItem'
+        limit:
+          type: integer
+          format: int64
+          example: 50
+        offset:
+          type: integer
+          format: int64
+          example: 0
+        total:
+          type: integer
+          format: int64
+          example: 100
+
+    PutRecordRequest:
+      type: object
+      required: [diagnosis, notes]
+      properties:
+        diagnosis:
+          type: string
+          example: Updated diagnosis
+        notes:
+          type: string
+          example: Updated notes
+
+    PutRecordResponse:
+      type: object
+      required: [recordId, updated]
+      properties:
+        recordId:
+          type: integer
+          format: int64
+        updated:
+          type: boolean
+          example: true
+
+    PatchRecordRequest:
+      type: object
+      description: At least one of diagnosis/notes must be provided
+      properties:
+        diagnosis:
+          type: string
+          example: Patched diagnosis
+        notes:
+          type: string
+          example: Patched notes
+
+    PatchRecordResponse:
+      type: object
+      required: [recordId, patched]
+      properties:
+        recordId:
+          type: integer
+          format: int64
+        patched:
+          type: boolean
+          example: true
+
+    DeleteRecordResponse:
+      type: object
+      required: [recordId, deleted]
+      properties:
+        recordId:
+          type: integer
+          format: int64
+        deleted:
+          type: boolean
+          example: true
+
+paths:
+  /ping:
+    get:
+      tags: [system]
+      summary: Ping
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+
+  /health:
+    get:
+      tags: [system]
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /api/auth/register:
+    post:
+      tags: [auth]
+      summary: Register user (creates patient by default)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      tags: [auth]
+      summary: Login and get JWT access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Missing fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/records:
+    get:
+      tags: [records]
+      summary: List medical records (paginated)
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int64
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            format: int64
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Records list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListRecordsResponse'
+
+    post:
+      tags: [records]
+      summary: Create medical record
+      description: |
+        Requires Bearer JWT.
+        In current implementation you may restrict by roles (e.g. doctor/admin).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRecordRequest'
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRecordResponse'
+        '400':
+          description: Missing/invalid fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden by role (if role checks enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/records/{recordId}:
+    parameters:
+      - in: path
+        name: recordId
+        required: true
+        schema:
+          type: integer
+          format: int64
+          example: 123
+
+    put:
+      tags: [records]
+      summary: Replace record fields (PUT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PutRecordRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PutRecordResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    patch:
+      tags: [records]
+      summary: Partially update record fields (PATCH)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchRecordRequest'
+      responses:
+        '200':
+          description: Patched
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatchRecordResponse'
+        '400':
+          description: Invalid patch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [records]
+      summary: Delete record
+      description: |
+        Requires Bearer JWT.
+        In current implementation you may restrict by roles (e.g. admin only).
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Deleted (JSON response, not 204)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteRecordResponse'
+        '401':
+          description: Missing/invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden by role (if role checks enabled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

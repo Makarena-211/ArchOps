@@ -1,0 +1,28 @@
+# build artifacts
+build-*
+cmake-build-*
+CMakeFiles
+CMakeCache.txt
+Testing
+tests/.pytest_cache
+**/__pycache__
+**/*.pyc
+
+# caches/envs
+.ccache
+.venv
+venv*
+.cache
+.ccls-cache
+
+# vcs
+.git
+
+# editor
+.vscode
+.DS_Store
+
+# logs/cores
+*.log
+cores
+/cores
