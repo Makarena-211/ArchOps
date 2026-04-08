@@ -63,6 +63,22 @@ components_manager:
       method: GET
       task_processor: main-task-processor
 
+    # ===== auth =====
+    auth-config:
+      jwt-secret: "CHANGE_ME_SUPER_SECRET"
+      token-ttl-seconds: 3600
+
+    handler-auth-register:
+      path: /api/auth/register
+      method: POST
+      task_processor: main-task-processor
+
+    handler-auth-login:
+      path: /api/auth/login
+      method: POST
+      task_processor: main-task-processor
+
+    # ===== CRUD =====
     handler-records-create:
       path: /api/records
       method: POST
@@ -88,16 +104,37 @@ components_manager:
       method: GET
       task_processor: main-task-processor
 
-    auth-config:
-      jwt-secret: "CHANGE_ME_SUPER_SECRET"
-      token-ttl-seconds: 3600
-
-    handler-auth-register:
-      path: /api/auth/register
+    handler-patients-create:
+      path: /api/patients
       method: POST
       task_processor: main-task-processor
 
-    handler-auth-login:
-      path: /api/auth/login
+    handler-patients-search:
+      path: /api/patients/search
+      method: GET
+      task_processor: main-task-processor
+
+    handler-patient-records-create:
+      path: /api/patients/{patientId}/records
       method: POST
+      task_processor: main-task-processor
+
+    handler-patient-records-list:
+      path: /api/patients/{patientId}/records
+      method: GET
+      task_processor: main-task-processor
+
+    handler-records-get:
+      path: /api/records/{recordId}
+      method: GET
+      task_processor: main-task-processor
+
+    handler-users-get-by-login:
+      path: /api/users/by-login
+      method: GET
+      task_processor: main-task-processor
+
+    handler-users-search-by-name:
+      path: /api/users/search
+      method: GET
       task_processor: main-task-processor
