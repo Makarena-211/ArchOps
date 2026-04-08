@@ -39,6 +39,14 @@ add_library(
   src/handlers/records_patch.cpp
   src/handlers/records_delete.cpp
   src/handlers/records_list.cpp
+
+  src/handlers/patients_create.cpp
+  src/handlers/patients_search.cpp
+  src/handlers/patients_records_create.cpp
+  src/handlers/patients_records_list.cpp
+  src/handlers/records_get.cpp
+  src/handlers/users_get_by_login.cpp
+  src/handlers/users_search_by_name.cpp
 )
 
 target_include_directories(

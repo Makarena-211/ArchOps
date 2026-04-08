@@ -14,11 +14,21 @@
 #include "../handlers/auth_login.hpp"
 #include "../handlers/auth_register.hpp"
 #include "../handlers/health.hpp"
+
 #include "../handlers/records_create.hpp"
 #include "../handlers/records_delete.hpp"
 #include "../handlers/records_list.hpp"
 #include "../handlers/records_patch.hpp"
 #include "../handlers/records_put.hpp"
+#include "../handlers/records_get.hpp"
+
+#include "../handlers/patients_create.hpp"
+#include "../handlers/patients_search.hpp"
+#include "../handlers/patients_records_create.hpp"
+#include "../handlers/patient_records_list.hpp"
+
+#include "../handlers/users_get_by_login.hpp"
+#include "../handlers/users_search_by_name.hpp"
 
 namespace myservice::components {
 
@@ -32,18 +42,26 @@ userver::components::ComponentList MakeComponentList() {
       .Append<userver::congestion_control::Component>()
       .Append<userver::components::Postgres>("postgres-db")
 
-      // ваш auth config + auth handlers
       .Append<myservice::components::AuthConfig>()
       .Append<myservice::handlers::AuthRegister>()
       .Append<myservice::handlers::AuthLogin>()
 
-      // ваши API handlers
       .Append<myservice::handlers::Health>()
+
       .Append<myservice::handlers::RecordsPut>()
       .Append<myservice::handlers::RecordsPatch>()
       .Append<myservice::handlers::RecordsDelete>()
       .Append<myservice::handlers::RecordsCreate>()
-      .Append<myservice::handlers::RecordsList>();
+      .Append<myservice::handlers::RecordsList>()
+      .Append<myservice::handlers::RecordsGet>()
+
+      .Append<myservice::handlers::PatientsCreate>()
+      .Append<myservice::handlers::PatientsSearch>()
+      .Append<myservice::handlers::PatientRecordsCreate>()
+      .Append<myservice::handlers::PatientRecordsList>()
+
+      .Append<myservice::handlers::UsersGetByLogin>()
+      .Append<myservice::handlers::UsersSearchByName>();
 }
 
 }  // namespace myservice::components
