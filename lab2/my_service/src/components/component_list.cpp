@@ -6,6 +6,7 @@
 #include <userver/congestion_control/component.hpp>
 #include <userver/server/handlers/ping.hpp>
 #include <userver/server/handlers/tests_control.hpp>
+#include <userver/storages/mongo/component.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/testsuite/testsuite_support.hpp>
 
@@ -30,6 +31,14 @@
 #include "../handlers/users_get_by_login.hpp"
 #include "../handlers/users_search_by_name.hpp"
 
+// ===== Mongo handlers =====
+#include "../handlers_mongo/mongo_records_create.hpp"
+#include "../handlers_mongo/mongo_records_list.hpp"
+#include "../handlers_mongo/mongo_records_get.hpp"
+#include "../handlers_mongo/mongo_records_put.hpp"
+#include "../handlers_mongo/mongo_records_patch.hpp"
+#include "../handlers_mongo/mongo_records_delete.hpp"
+
 namespace myservice::components {
 
 userver::components::ComponentList MakeComponentList() {
@@ -41,6 +50,7 @@ userver::components::ComponentList MakeComponentList() {
       .Append<userver::server::handlers::TestsControl>()
       .Append<userver::congestion_control::Component>()
       .Append<userver::components::Postgres>("postgres-db")
+      .Append<userver::components::Mongo>("mongo-db")
 
       .Append<myservice::components::AuthConfig>()
       .Append<myservice::handlers::AuthRegister>()
@@ -61,7 +71,15 @@ userver::components::ComponentList MakeComponentList() {
       .Append<myservice::handlers::PatientRecordsList>()
 
       .Append<myservice::handlers::UsersGetByLogin>()
-      .Append<myservice::handlers::UsersSearchByName>();
+      .Append<myservice::handlers::UsersSearchByName>()
+
+      // ===== Mongo CRUD =====
+      .Append<myservice::handlers::MongoRecordsCreate>()
+      .Append<myservice::handlers::MongoRecordsList>()
+      .Append<myservice::handlers::MongoRecordsGet>()
+      .Append<myservice::handlers::MongoRecordsPut>()
+      .Append<myservice::handlers::MongoRecordsPatch>()
+      .Append<myservice::handlers::MongoRecordsDelete>();
 }
 
 }  // namespace myservice::components

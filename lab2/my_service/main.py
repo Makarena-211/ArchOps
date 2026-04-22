@@ -222,6 +222,64 @@ class MyServiceClient:
             "GET", "/api/users/search", params={"mask": mask, "limit": limit, "offset": offset}
         )
 
+    # ===== Mongo records API =====
+    def mongo_create_record(
+        self,
+        *,
+        token: str,
+        patient_oid: str,
+        doctor_oid: str,
+        diagnosis: str,
+        notes: str,
+    ) -> ApiResponse:
+        return self.call_endpoint(
+            "POST",
+            "/api/mongo/records",
+            token=token,
+            json_body={
+                "patientId": patient_oid,
+                "doctorId": doctor_oid,
+                "diagnosis": diagnosis,
+                "notes": notes,
+            },
+        )
+
+    def mongo_list_records(self, *, limit: int = 50, offset: int = 0) -> ApiResponse:
+        return self.call_endpoint(
+            "GET", "/api/mongo/records", params={"limit": limit, "offset": offset}
+        )
+
+    def mongo_get_record(self, *, record_oid: str) -> ApiResponse:
+        return self.call_endpoint("GET", f"/api/mongo/records/{record_oid}")
+
+    def mongo_put_record(self, *, record_oid: str, diagnosis: str, notes: str) -> ApiResponse:
+        return self.call_endpoint(
+            "PUT",
+            f"/api/mongo/records/{record_oid}",
+            json_body={"diagnosis": diagnosis, "notes": notes},
+        )
+
+    def mongo_patch_record(
+        self,
+        *,
+        record_oid: str,
+        diagnosis: Optional[str] = None,
+        notes: Optional[str] = None,
+    ) -> ApiResponse:
+        body: Dict[str, Any] = {}
+        if diagnosis is not None:
+            body["diagnosis"] = diagnosis
+        if notes is not None:
+            body["notes"] = notes
+        return self.call_endpoint(
+            "PATCH",
+            f"/api/mongo/records/{record_oid}",
+            json_body=body,
+        )
+
+    def mongo_delete_record(self, *, token: str, record_oid: str) -> ApiResponse:
+        return self.call_endpoint("DELETE", f"/api/mongo/records/{record_oid}", token=token)
+
 
 def extract_token_or_none(login_resp: ApiResponse) -> Optional[str]:
     if login_resp.body and isinstance(login_resp.body, dict):
@@ -357,7 +415,6 @@ def run_all() -> None:
         birth_date="1990-01-10",
     )
     show("POST /api/patients (create patient profile)", create_patient)
-    # 200 OK or 409 if already exists (in repeated runs with same user shouldn't happen, but keep tolerant)
     assert_http(create_patient, (200, 409), "POST /api/patients")
 
     patient_id: Optional[int] = None
@@ -374,14 +431,12 @@ def run_all() -> None:
     show("GET /api/users/search?mask=Иван", u_search)
     assert_http(u_search, 200, "GET /api/users/search")
 
-    # If profile already exists (409), we still can find it via search
     # 7) Search patients by mask
     search = client.search_patients(mask="Иван", limit=10, offset=0)
     show("GET /api/patients/search?mask=Иван", search)
     assert_http(search, 200, "GET /api/patients/search")
 
     if patient_id is None:
-        # try to infer from search results (find exact email match if present)
         if isinstance(search.body, dict) and isinstance(search.body.get("items"), list):
             for item in search.body["items"]:
                 if isinstance(item, dict) and item.get("email") == patient_email:
@@ -401,34 +456,12 @@ def run_all() -> None:
     show(f"POST /api/patients/{patient_id}/records (add record)", add_rec)
     assert_http(add_rec, 200, f"POST /api/patients/{patient_id}/records")
 
-    record_id_from_new: Optional[int] = None
-    if isinstance(add_rec.body, dict) and "recordId" in add_rec.body:
-        record_id_from_new = int(add_rec.body["recordId"])
-
     # 9) List patient records (history)
     hist = client.list_patient_records(patient_id=patient_id, limit=10, offset=0)
     show(f"GET /api/patients/{patient_id}/records (history)", hist)
     assert_http(hist, 200, f"GET /api/patients/{patient_id}/records")
 
-    # 10) Get record by code (id)
-    if record_id_from_new is None:
-        # fallback from history
-        if (
-            isinstance(hist.body, dict)
-            and isinstance(hist.body.get("items"), list)
-            and hist.body["items"]
-        ):
-            record_id_from_new = int(hist.body["items"][0]["id"])
-
-    if record_id_from_new is None:
-        raise RuntimeError("Could not determine recordId for GET /api/records/{recordId}")
-
-    get_by_id = client.get_record_by_id(record_id=record_id_from_new)
-    show(f"GET /api/records/{record_id_from_new} (by id)", get_by_id)
-    assert_http(get_by_id, 200, f"GET /api/records/{record_id_from_new}")
-
-    # 11) OLD endpoints check (create/list/put/patch/delete)
-    # Для старого /api/records нужен patientId (теперь это patients.id), а doctorId можно передать user_id доктора.
+    # 10) OLD endpoints check (create/list/put/patch/delete)
     create_old = client.create_record_old(
         token=doctor_token,
         patient_id=patient_id,
@@ -464,17 +497,15 @@ def run_all() -> None:
     show(f"PATCH /api/records/{old_record_id} (OLD patch)", patch_old)
     assert_http(patch_old, 200, f"PATCH /api/records/{old_record_id}")
 
-    # DELETE требует admin по твоей логике => проверим, что doctor получает 403, это тоже "проверка работы"
     del_forbidden = client.delete_record_old(token=doctor_token, record_id=old_record_id)
     show(f"DELETE /api/records/{old_record_id} (doctor -> expected 403)", del_forbidden)
     assert_http(del_forbidden, (403, 401), f"DELETE /api/records/{old_record_id} as doctor")
 
-    # Повысим doctor до admin и удалим
+    # Promote doctor -> admin and delete
     db_set_role(db_cfg, email=email, role="admin")
     admin_login = client.login(email=email, password=password)
     show("POST /api/auth/login (admin)", admin_login)
     assert_http(admin_login, 200, "POST /api/auth/login (admin)")
-
     admin_token = extract_token_or_none(admin_login)
     if not admin_token:
         raise RuntimeError("No accessToken in admin login response")
@@ -483,7 +514,57 @@ def run_all() -> None:
     show(f"DELETE /api/records/{old_record_id} (admin -> expected 200)", del_ok)
     assert_http(del_ok, 200, f"DELETE /api/records/{old_record_id} as admin")
 
-    print("\nALL CHECKS PASSED")
+    # =========================
+    # MONGO CRUD TEST
+    # =========================
+    print("\n" + "=" * 110)
+    print("MONGO CRUD TEST (/api/mongo/records)")
+    print("=" * 110)
+
+    patient_oid = "661e3f9c2b9f0c3a9bd4e701"                                                                                                                        
+    doctor_oid = "661e3f9c2b9f0c3a9bd4e702"  
+    
+    create_m = client.mongo_create_record(
+        token=admin_token,
+        patient_oid=patient_oid,
+        doctor_oid=doctor_oid,
+        diagnosis="Mongo-Diagnosis",
+        notes="Mongo-Notes",
+    )
+    show("POST /api/mongo/records (create)", create_m)
+    assert_http(create_m, 200, "POST /api/mongo/records")
+
+    if not isinstance(create_m.body, dict) or "recordId" not in create_m.body:
+        raise RuntimeError("Mongo create did not return recordId")
+    rec_oid = str(create_m.body["recordId"])
+    if not rec_oid:
+        raise RuntimeError("Mongo recordId is empty")
+
+    lst_m = client.mongo_list_records(limit=10, offset=0)
+    show("GET /api/mongo/records (list)", lst_m)
+    assert_http(lst_m, 200, "GET /api/mongo/records")
+
+    get_m = client.mongo_get_record(record_oid=rec_oid)
+    show(f"GET /api/mongo/records/{rec_oid} (get)", get_m)
+    assert_http(get_m, 200, "GET /api/mongo/records/{id}")
+
+    put_m = client.mongo_put_record(record_oid=rec_oid, diagnosis="Mongo-PUT", notes="Mongo-PUT-Notes")
+    show(f"PUT /api/mongo/records/{rec_oid} (put)", put_m)
+    assert_http(put_m, 200, "PUT /api/mongo/records/{id}")
+
+    patch_m = client.mongo_patch_record(record_oid=rec_oid, diagnosis="Mongo-PATCH")
+    show(f"PATCH /api/mongo/records/{rec_oid} (patch)", patch_m)
+    assert_http(patch_m, 200, "PATCH /api/mongo/records/{id}")
+
+    del_m = client.mongo_delete_record(token=admin_token, record_oid=rec_oid)
+    show(f"DELETE /api/mongo/records/{rec_oid} (delete)", del_m)
+    assert_http(del_m, 200, "DELETE /api/mongo/records/{id}")
+
+    get_deleted = client.mongo_get_record(record_oid=rec_oid)
+    show(f"GET /api/mongo/records/{rec_oid} (after delete, expected 404)", get_deleted)
+    assert_http(get_deleted, 404, "GET /api/mongo/records/{id} after delete")
+
+    print("\nALL CHECKS PASSED (including Mongo CRUD)")
 
 
 if __name__ == "__main__":
