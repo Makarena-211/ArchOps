@@ -6,9 +6,11 @@ include(DownloadUserver)
 
 find_package(
   userver
+  REQUIRED
   COMPONENTS
     core
     postgresql
+    mongo
   QUIET
 )
 
@@ -47,6 +49,14 @@ add_library(
   src/handlers/records_get.cpp
   src/handlers/users_get_by_login.cpp
   src/handlers/users_search_by_name.cpp
+
+  # ===== Mongo records API =====
+  src/handlers_mongo/mongo_records_create.cpp
+  src/handlers_mongo/mongo_records_list.cpp
+  src/handlers_mongo/mongo_records_get.cpp
+  src/handlers_mongo/mongo_records_put.cpp
+  src/handlers_mongo/mongo_records_patch.cpp
+  src/handlers_mongo/mongo_records_delete.cpp
 )
 
 target_include_directories(
@@ -60,6 +70,7 @@ target_link_libraries(
   PUBLIC
     userver::core
     userver::postgresql
+    userver::mongo
   PRIVATE
     OpenSSL::Crypto
 )

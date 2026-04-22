@@ -21,6 +21,13 @@ components_manager:
       blocking_task_processor: fs-task-processor
       dns_resolver: async
 
+    # ===== MongoDB =====
+    mongo-db:
+      dbconnection: "mongodb://mongo:27017/medicine"
+      conn_timeout: 2s
+      so_timeout: 10s
+      initial_size: 16
+
     logging:
       fs-task-processor: fs-task-processor
       loggers:
@@ -78,7 +85,7 @@ components_manager:
       method: POST
       task_processor: main-task-processor
 
-    # ===== CRUD =====
+    # ===== CRUD (Postgres records) =====
     handler-records-create:
       path: /api/records
       method: POST
@@ -137,4 +144,35 @@ components_manager:
     handler-users-search-by-name:
       path: /api/users/search
       method: GET
+      task_processor: main-task-processor
+
+    # ===== Mongo CRUD: medical_records =====
+    handler-mongo-records-create:
+      path: /api/mongo/records
+      method: POST
+      task_processor: main-task-processor
+
+    handler-mongo-records-list:
+      path: /api/mongo/records
+      method: GET
+      task_processor: main-task-processor
+
+    handler-mongo-records-get:
+      path: /api/mongo/records/{recordId}
+      method: GET
+      task_processor: main-task-processor
+
+    handler-mongo-records-put:
+      path: /api/mongo/records/{recordId}
+      method: PUT
+      task_processor: main-task-processor
+
+    handler-mongo-records-patch:
+      path: /api/mongo/records/{recordId}
+      method: PATCH
+      task_processor: main-task-processor
+
+    handler-mongo-records-delete:
+      path: /api/mongo/records/{recordId}
+      method: DELETE
       task_processor: main-task-processor
