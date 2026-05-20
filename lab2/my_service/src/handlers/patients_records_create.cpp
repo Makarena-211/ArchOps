@@ -9,6 +9,7 @@
 #include <userver/storages/postgres/component.hpp>
 
 #include "../auth/authz.hpp"
+#include "../components/inmemory_cache.hpp"
 #include "../db/records_queries.hpp"
 
 namespace myservice::handlers {
@@ -25,12 +26,17 @@ std::int64_t ParseIdPathArgOrThrow(const userver::server::http::HttpRequest& req
   }
 }
 
+std::string CachePrefixPatientRecords(std::int64_t patient_id) {
+  return "patient_records:" + std::to_string(patient_id) + ":";
+}
+
 }  // namespace
 
 PatientRecordsCreate::PatientRecordsCreate(const userver::components::ComponentConfig& config,
                                            const userver::components::ComponentContext& context)
     : HttpHandlerJsonBase(config, context),
-      auth_cfg_(context.FindComponent<myservice::components::AuthConfig>()) {
+      auth_cfg_(context.FindComponent<myservice::components::AuthConfig>()),
+      cache_(context.FindComponent<myservice::components::InMemoryCache>()) {
   pg_ = context.FindComponent<userver::components::Postgres>("postgres-db").GetCluster();
 }
 
@@ -39,7 +45,6 @@ userver::formats::json::Value PatientRecordsCreate::HandleRequestJsonThrow(
     const userver::formats::json::Value& json,
     userver::server::request::RequestContext&) const {
 
-  // По варианту: запись делает врач (или admin)
   const auto claims = myservice::auth::VerifyRequestAndGetClaimsOrThrow(request, auth_cfg_);
   myservice::auth::RequireRoleOrThrow(claims.role, {"doctor", "admin"});
 
@@ -53,12 +58,13 @@ userver::formats::json::Value PatientRecordsCreate::HandleRequestJsonThrow(
   const auto diagnosis = json["diagnosis"].As<std::string>();
   const auto notes = json["notes"].As<std::string>();
 
-  const auto res = pg_->Execute(
-      userver::storages::postgres::ClusterHostType::kMaster,
-      myservice::db::kInsertRecordToPatient,
-      patient_id, claims.user_id, diagnosis, notes);
+  const auto res = pg_->Execute(userver::storages::postgres::ClusterHostType::kMaster,
+                                myservice::db::kInsertRecordToPatient,
+                                patient_id, claims.user_id, diagnosis, notes);
 
   const auto record_id = res.AsSingleRow<std::int64_t>();
+
+  cache_.InvalidateByPrefix(CachePrefixPatientRecords(patient_id));
 
   userver::formats::json::ValueBuilder vb;
   vb["recordId"] = record_id;

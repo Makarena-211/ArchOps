@@ -58,6 +58,20 @@ components_manager:
       method: POST
       task_processor: main-task-processor
 
+    # =========================
+    # In-memory cache component
+    # =========================
+    inmemory-cache:
+      max-entries: 5000
+
+    # =========================
+    # Rate limiter component
+    # =========================
+    rate-limiter:
+      default:
+        capacity: 60
+        refill-per-second: 1   # 60/min
+
     handler-ping:
       path: /ping
       method: GET
@@ -120,6 +134,7 @@ components_manager:
       path: /api/patients/search
       method: GET
       task_processor: main-task-processor
+      rate-limit-name: patients-search
 
     handler-patient-records-create:
       path: /api/patients/{patientId}/records

@@ -3,6 +3,10 @@
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 
+namespace myservice::components {
+class InMemoryCache;
+}
+
 namespace myservice::handlers {
 
 class PatientRecordsList final : public userver::server::handlers::HttpHandlerJsonBase {
@@ -19,6 +23,7 @@ class PatientRecordsList final : public userver::server::handlers::HttpHandlerJs
 
  private:
   userver::storages::postgres::ClusterPtr pg_;
+  const myservice::components::InMemoryCache& cache_;
 };
 
 }  // namespace myservice::handlers
