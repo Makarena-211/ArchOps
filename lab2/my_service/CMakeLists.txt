@@ -31,6 +31,9 @@ add_library(
 
   src/components/inmemory_cache.cpp
   src/components/rate_limiter.cpp
+  src/components/event_publisher_config.cpp
+
+  src/events/event_publisher.cpp
 
   src/auth/jwt.cpp
   src/auth/password.cpp
@@ -52,6 +55,7 @@ add_library(
   src/handlers/records_get.cpp
   src/handlers/users_get_by_login.cpp
   src/handlers/users_search_by_name.cpp
+  src/handlers/read_records_get.cpp
 
   # ===== Mongo records API =====
   src/handlers_mongo/mongo_records_create.cpp

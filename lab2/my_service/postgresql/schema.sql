@@ -1,8 +1,3 @@
--- schema.sql
--- Схема БД для сервиса "медицинское учреждение"
--- Сущности: users, patients, medical_records
-
--- Для триграммного поиска (ILIKE %...%) по ФИО
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- =========================
@@ -24,9 +19,6 @@ CREATE TABLE IF NOT EXISTS users (
   CONSTRAINT chk_users_password_hash_nonempty
     CHECK (length(trim(password_hash)) > 0)
 );
-
--- Индекс на email создаётся автоматически из-за UNIQUE.
--- PK индекс на id создаётся автоматически.
 
 -- =========================
 -- TABLE: patients
@@ -53,8 +45,9 @@ CREATE TABLE IF NOT EXISTS patients (
     CHECK (birth_date IS NULL OR birth_date >= DATE '1900-01-01')
 );
 
-
--- medical_records
+-- =========================
+-- TABLE: medical_records (WRITE MODEL)
+-- =========================
 CREATE TABLE IF NOT EXISTS medical_records (
   id         BIGSERIAL PRIMARY KEY,
   patient_id BIGINT NOT NULL,
@@ -76,34 +69,37 @@ CREATE TABLE IF NOT EXISTS medical_records (
     CHECK (length(trim(notes)) > 0)
 );
 
+-- =========================
+-- TABLE: medical_records_read (READ MODEL, CQRS)
+-- =========================
+CREATE TABLE IF NOT EXISTS medical_records_read (
+  record_id  BIGINT PRIMARY KEY,
+  patient_id BIGINT NOT NULL,
+  doctor_id  BIGINT NOT NULL,
+  diagnosis  TEXT NOT NULL,
+  notes      TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_medical_records_read_patient_id
+  ON medical_records_read(patient_id);
 
 -- INDEXES
 
--- 1) Индексы на внешние ключи (ускоряют JOIN и фильтрацию)
--- users.id (PK) уже индексирован автоматически.
-
--- patients.user_id используется в JOIN users<->patients и в проверках уникальности
--- (UNIQUE тоже создаёт индекс, но оставим явный индекс не нужно; UNIQUE уже достаточно).
-
--- medical_records.patient_id: частый WHERE и история пациента
 CREATE INDEX IF NOT EXISTS idx_medical_records_patient_id
   ON medical_records(patient_id);
 
--- medical_records.doctor_id: выборки врача/аудит
 CREATE INDEX IF NOT EXISTS idx_medical_records_doctor_id
   ON medical_records(doctor_id);
 
--- 2) Индекс под сортировку истории пациента: ORDER BY created_at DESC
 CREATE INDEX IF NOT EXISTS idx_medical_records_patient_created_at
   ON medical_records(patient_id, created_at DESC, id DESC);
 
--- 3) Индексы под поиск по маске ФИО (ILIKE %...%) через pg_trgm
 CREATE INDEX IF NOT EXISTS gin_patients_first_name_trgm
   ON patients USING GIN (first_name gin_trgm_ops);
 
 CREATE INDEX IF NOT EXISTS gin_patients_last_name_trgm
   ON patients USING GIN (last_name gin_trgm_ops);
 
--- Поиск по ФИО: last first middle
 CREATE INDEX IF NOT EXISTS gin_patients_fullname_trgm
   ON patients USING GIN ((last_name || ' ' || first_name || ' ' || COALESCE(middle_name, '')) gin_trgm_ops);

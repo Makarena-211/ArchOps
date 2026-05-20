@@ -3,13 +3,17 @@
 #include <cstdint>
 #include <string>
 
+#include <userver/clients/http/component.hpp>
 #include <userver/components/component_context.hpp>
+#include <userver/formats/json/value_builder.hpp>
 #include <userver/server/handlers/exceptions.hpp>
 #include <userver/storages/postgres/component.hpp>
 
+#include "../components/event_publisher_config.hpp"
 #include "../components/inmemory_cache.hpp"
 #include "../db/queries.hpp"
 #include "../db/records_queries.hpp"
+#include "../events/event_publisher.hpp"
 
 namespace myservice::handlers {
 
@@ -36,9 +40,10 @@ std::string CachePrefixPatientRecords(std::int64_t patient_id) {
 RecordsPut::RecordsPut(const userver::components::ComponentConfig& config,
                        const userver::components::ComponentContext& context)
     : HttpHandlerJsonBase(config, context),
-      cache_(context.FindComponent<myservice::components::InMemoryCache>()) {
-  pg_ = context.FindComponent<userver::components::Postgres>("postgres-db").GetCluster();
-}
+      pg_(context.FindComponent<userver::components::Postgres>("postgres-db").GetCluster()),
+      cache_(context.FindComponent<myservice::components::InMemoryCache>()),
+      http_(context.FindComponent<userver::components::HttpClient>().GetHttpClient()),
+      pub_cfg_(context.FindComponent<myservice::components::EventPublisherConfig>()) {}
 
 userver::formats::json::Value RecordsPut::HandleRequestJsonThrow(
     const userver::server::http::HttpRequest& request,
@@ -79,6 +84,21 @@ userver::formats::json::Value RecordsPut::HandleRequestJsonThrow(
 
   cache_.Invalidate(CacheKeyRecord(record_id));
   cache_.InvalidateByPrefix(CachePrefixPatientRecords(patient_id));
+
+  userver::formats::json::ValueBuilder payload;
+  payload["recordId"] = record_id;
+  payload["patientId"] = patient_id;
+  payload["doctorId"] = 0;
+  payload["diagnosis"] = diagnosis;
+  payload["notes"] = notes;
+  payload["createdAt"] = "";
+
+  myservice::events::PublishKafkaEventViaHttp(
+      http_,
+      pub_cfg_.GetUrl(),
+      "record:" + std::to_string(record_id),
+      "MedicalRecordUpdated",
+      payload.ExtractValue());
 
   userver::formats::json::ValueBuilder vb;
   vb["recordId"] = record_id;

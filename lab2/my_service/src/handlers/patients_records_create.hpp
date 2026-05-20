@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+
+#include <userver/clients/http/client.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 
@@ -7,6 +10,7 @@
 
 namespace myservice::components {
 class InMemoryCache;
+class EventPublisherConfig;
 }
 
 namespace myservice::handlers {
@@ -27,6 +31,9 @@ class PatientRecordsCreate final : public userver::server::handlers::HttpHandler
   userver::storages::postgres::ClusterPtr pg_;
   const myservice::components::AuthConfig& auth_cfg_;
   const myservice::components::InMemoryCache& cache_;
+
+  userver::clients::http::Client& http_;
+  const myservice::components::EventPublisherConfig& pub_cfg_;
 };
 
 }  // namespace myservice::handlers

@@ -59,18 +59,24 @@ components_manager:
       task_processor: main-task-processor
 
     # =========================
-    # In-memory cache component
+    # HW05 In-memory cache
     # =========================
     inmemory-cache:
       max-entries: 5000
 
     # =========================
-    # Rate limiter component
+    # HW05 Rate limiter
     # =========================
     rate-limiter:
       default:
         capacity: 60
-        refill-per-second: 1   # 60/min
+        refill-per-second: 1
+
+    # =========================
+    # HW06 Event publisher config (HTTP -> event-gateway)
+    # =========================
+    event-publisher-config:
+      url: "http://event-gateway:8090"
 
     handler-ping:
       path: /ping
@@ -99,7 +105,7 @@ components_manager:
       method: POST
       task_processor: main-task-processor
 
-    # ===== CRUD (Postgres records) =====
+    # ===== CRUD =====
     handler-records-create:
       path: /api/records
       method: POST
@@ -148,6 +154,12 @@ components_manager:
 
     handler-records-get:
       path: /api/records/{recordId}
+      method: GET
+      task_processor: main-task-processor
+
+    # ===== CQRS read model =====
+    handler-read-records-get:
+      path: /api/read/records/{recordId}
       method: GET
       task_processor: main-task-processor
 

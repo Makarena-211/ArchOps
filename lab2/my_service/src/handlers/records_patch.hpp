@@ -1,10 +1,12 @@
 #pragma once
 
+#include <userver/clients/http/client.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 
 namespace myservice::components {
 class InMemoryCache;
+class EventPublisherConfig;
 }
 
 namespace myservice::handlers {
@@ -24,6 +26,9 @@ class RecordsPatch final : public userver::server::handlers::HttpHandlerJsonBase
  private:
   userver::storages::postgres::ClusterPtr pg_;
   const myservice::components::InMemoryCache& cache_;
+
+  userver::clients::http::Client& http_;
+  const myservice::components::EventPublisherConfig& pub_cfg_;
 };
 
 }  // namespace myservice::handlers

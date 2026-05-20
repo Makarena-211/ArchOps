@@ -1,6 +1,7 @@
 #include "component_list.hpp"
 
 #include <userver/clients/dns/component.hpp>
+#include <userver/clients/http/component.hpp>
 #include <userver/clients/http/component_list.hpp>
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/congestion_control/component.hpp>
@@ -11,6 +12,7 @@
 #include <userver/testsuite/testsuite_support.hpp>
 
 #include "auth_config.hpp"
+#include "event_publisher_config.hpp"
 #include "inmemory_cache.hpp"
 #include "rate_limiter.hpp"
 
@@ -29,6 +31,8 @@
 #include "../handlers/patients_search.hpp"
 #include "../handlers/patients_records_create.hpp"
 #include "../handlers/patient_records_list.hpp"
+
+#include "../handlers/read_records_get.hpp"
 
 #include "../handlers/users_get_by_login.hpp"
 #include "../handlers/users_search_by_name.hpp"
@@ -52,11 +56,12 @@ userver::components::ComponentList MakeComponentList() {
       .Append<userver::server::handlers::TestsControl>()
       .Append<userver::congestion_control::Component>()
       .Append<userver::components::Postgres>("postgres-db")
-      .Append<userver::components::Mongo>("mongo-db")
+      .Append<userver::components::HttpClient>()
 
       .Append<myservice::components::AuthConfig>()
       .Append<myservice::components::InMemoryCache>()
       .Append<myservice::components::RateLimiter>()
+      .Append<myservice::components::EventPublisherConfig>()
 
       .Append<myservice::handlers::AuthRegister>()
       .Append<myservice::handlers::AuthLogin>()
@@ -74,6 +79,8 @@ userver::components::ComponentList MakeComponentList() {
       .Append<myservice::handlers::PatientsSearch>()
       .Append<myservice::handlers::PatientRecordsCreate>()
       .Append<myservice::handlers::PatientRecordsList>()
+
+      .Append<myservice::handlers::ReadRecordsGet>()
 
       .Append<myservice::handlers::UsersGetByLogin>()
       .Append<myservice::handlers::UsersSearchByName>()
