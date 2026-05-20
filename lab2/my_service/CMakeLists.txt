@@ -27,6 +27,9 @@ add_library(
   src/components/component_list.cpp
   src/components/auth_config.cpp
 
+  src/components/inmemory_cache.cpp
+  src/components/rate_limiter.cpp
+
   src/auth/jwt.cpp
   src/auth/password.cpp
 

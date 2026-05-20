@@ -5,6 +5,10 @@
 
 #include "../components/auth_config.hpp"
 
+namespace myservice::components {
+class InMemoryCache;
+}
+
 namespace myservice::handlers {
 
 class RecordsDelete final : public userver::server::handlers::HttpHandlerJsonBase {
@@ -22,6 +26,7 @@ class RecordsDelete final : public userver::server::handlers::HttpHandlerJsonBas
  private:
   userver::storages::postgres::ClusterPtr pg_;
   const myservice::components::AuthConfig& auth_cfg_;
+  const myservice::components::InMemoryCache& cache_;
 };
 
 }  // namespace myservice::handlers

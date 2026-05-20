@@ -48,4 +48,12 @@ inline const userver::storages::postgres::Query kGetRecordById{
     )~",
     userver::storages::postgres::Query::Name{"get_record_by_id"}};
 
+inline const userver::storages::postgres::Query kGetRecordPatientIdByRecordId{
+    R"~(
+      SELECT patient_id
+      FROM medical_records
+      WHERE id = $1
+    )~",
+    userver::storages::postgres::Query::Name{"get_record_patient_id_by_record_id"}};
+
 }  // namespace myservice::db

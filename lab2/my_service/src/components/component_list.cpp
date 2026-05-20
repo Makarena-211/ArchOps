@@ -10,6 +10,8 @@
 #include <userver/testsuite/testsuite_support.hpp>
 
 #include "auth_config.hpp"
+#include "inmemory_cache.hpp"
+#include "rate_limiter.hpp"
 
 #include "../handlers/auth_login.hpp"
 #include "../handlers/auth_register.hpp"
@@ -43,6 +45,9 @@ userver::components::ComponentList MakeComponentList() {
       .Append<userver::components::Postgres>("postgres-db")
 
       .Append<myservice::components::AuthConfig>()
+      .Append<myservice::components::InMemoryCache>()
+      .Append<myservice::components::RateLimiter>()
+
       .Append<myservice::handlers::AuthRegister>()
       .Append<myservice::handlers::AuthLogin>()
 

@@ -4,10 +4,12 @@
 #include <string>
 
 #include <userver/components/component_context.hpp>
+#include <userver/formats/json/serialize.hpp>
 #include <userver/formats/json/value_builder.hpp>
 #include <userver/server/handlers/exceptions.hpp>
 #include <userver/storages/postgres/component.hpp>
 
+#include "../components/inmemory_cache.hpp"
 #include "../db/records_queries.hpp"
 
 namespace myservice::handlers {
@@ -24,11 +26,16 @@ std::int64_t ParseIdPathArgOrThrow(const userver::server::http::HttpRequest& req
   }
 }
 
+std::string CacheKeyRecord(std::int64_t record_id) {
+  return "record:" + std::to_string(record_id);
+}
+
 }  // namespace
 
 RecordsGet::RecordsGet(const userver::components::ComponentConfig& config,
                        const userver::components::ComponentContext& context)
-    : HttpHandlerJsonBase(config, context) {
+    : HttpHandlerJsonBase(config, context),
+      cache_(context.FindComponent<myservice::components::InMemoryCache>()) {
   pg_ = context.FindComponent<userver::components::Postgres>("postgres-db").GetCluster();
 }
 
@@ -36,14 +43,15 @@ userver::formats::json::Value RecordsGet::HandleRequestJsonThrow(
     const userver::server::http::HttpRequest& request,
     const userver::formats::json::Value&,
     userver::server::request::RequestContext&) const {
-
   const auto record_id = ParseIdPathArgOrThrow(request, "recordId");
+  const auto key = CacheKeyRecord(record_id);
 
-  const auto res = pg_->Execute(
-      userver::storages::postgres::ClusterHostType::kSlave,
-      myservice::db::kGetRecordById,
-      record_id);
+  if (auto cached = cache_.Get(key)) {
+    return userver::formats::json::FromString(*cached);
+  }
 
+  const auto res = pg_->Execute(userver::storages::postgres::ClusterHostType::kSlave,
+                                myservice::db::kGetRecordById, record_id);
   if (res.IsEmpty()) {
     throw userver::server::handlers::ResourceNotFound(
         userver::server::handlers::ExternalBody{"Record not found"});
@@ -57,7 +65,10 @@ userver::formats::json::Value RecordsGet::HandleRequestJsonThrow(
   out["diagnosis"] = row["diagnosis"].As<std::string>();
   out["notes"] = row["notes"].As<std::string>();
   out["createdAt"] = row["created_at"].As<std::string>();
-  return out.ExtractValue();
+
+  const auto value = out.ExtractValue();
+  cache_.Put(key, userver::formats::json::ToString(value), std::chrono::seconds{30});
+  return value;
 }
 
 }  // namespace myservice::handlers
