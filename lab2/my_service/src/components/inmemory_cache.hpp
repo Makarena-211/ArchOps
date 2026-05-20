@@ -25,7 +25,6 @@ class InMemoryCache final : public userver::components::ComponentBase {
 
   std::optional<std::string> Get(std::string_view key) const;
 
-  // MUST be const: handlers keep cache_ as const ref and HandleRequest... is const
   void Put(std::string key, std::string value, std::chrono::seconds ttl) const;
 
   void Invalidate(std::string_view key) const;

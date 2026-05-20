@@ -15,7 +15,6 @@ RateLimiter::RateLimiter(const userver::components::ComponentConfig& config,
 }
 
 userver::yaml_config::Schema RateLimiter::GetStaticConfigSchema() {
-  // ВАЖНО: добавлены description, и убран endpoints чтобы не ловить требования к описанию вложенных схем
   return userver::yaml_config::MergeSchemas<userver::components::ComponentBase>(
       R"(
 type: object
@@ -39,7 +38,7 @@ properties:
 }
 
 RateLimitDecision RateLimiter::Check(std::string_view endpoint_name, std::string_view key) const {
-  (void)endpoint_name;  // в упрощённой версии endpoint-specific конфиг не используем
+  (void)endpoint_name;
 
   const auto now = std::chrono::steady_clock::now();
   const std::string bucket_key = std::string(key);
